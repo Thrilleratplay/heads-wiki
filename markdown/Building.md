@@ -1,10 +1,70 @@
-Building Heads
+Releases
 ===
+There are currently no binary downloads; you must build from source to ensure that you can add your own GPG keys to the image to sign your OS installation.
+
+The current release is [0.2.1](https://github.com/osresearch/heads/releases/tag/v0.2.1) and is one of the first that is close to usable for other users.  There are changes to how the Heads `/init` figures out what to `kexec` and how it interacts with the TPM.
+
+Heads buils should be fully reproducible on any Linux-ish system ([OSX build is not supported](https://github.com/osresearch/heads/issues/96)).  If you don't get the same hashes as reported on the release page, please file an issue against the [reproducible build milestone](https://github.com/osresearch/heads/milestone/1).
+
+
+
+# Building Heads
+
+
 Heads is supposed to be a [reproducible build](https://reproducible-builds.org/) and as of [v0.1.0](https://github.com/osresearch/heads/releases/tag/v0.1.0) it achieved this goal.  The downside is that the initial build can take a very long time as it downloads and builds all of the its dependencies.  One issue right now is that it builds not just one, but *two* cross compilers and as a result takes about 45 minutes.  Luckily subsequent builds only take about 30 seconds to produce a full coreboot and Linux ROM image, but that first ones a doozy...
 
 With a vanilla Debian 9 or Ubuntu 16.04 install, such as a digitalocean
 droplet, you need to first install some support tools. This takes a
 short while, so get a cup of coffee and [install host build requirements packages as specified here](https://github.com/osresearch/heads/blob/master/.circleci/config.yml#L10-L11)
+
+
+
+Install the necessary support tools for your distribution.
+
+* [Debian or Ubuntu](https://github.com/osresearch/heads/blob/master/.circleci/config.yml#L11)
+* [Fedora](https://github.com/osresearch/heads/blob/master/.gitlab-ci.yml#L19)
+
+Install `qemu` and `qt5-devel` (for emulation and analysis with UEFITool respectively):
+
+```
+dnf install -y \
+    qemu qt5-devel \
+```
+
+Clone the Heads repo:
+
+```
+git clone https://github.com/osresearch/heads.git
+```
+
+Move into the cloned repository:
+
+```
+cd heads
+```
+
+Builds of Heads are reproducible, which means that Heads will build in the exact same way on different computers. Because of this, as a user, you can guarantee that Heads has built correctly and has not been tampered with.
+
+However, this also means that the first time you build Heads it must first build the compilers that it will use to build itself. If that seems complicated, don’t worry. The result is that the first build of Heads will take about an hour to complete. After the first build, building Heads will take less than a minute.
+
+For the Thinkpad x230 there are two boards in `./boards`, x230-flash and x230. x230-flash is externally flashable and contains a smaller package that will let us boot to the Heads recovery shell. x230 is only internally flashable and contains all of Heads. Since we will end up using both x230-flash and x230, it makes the most sense to build both now.
+
+Make both boards:
+
+```
+make BOARD=x230-flash
+make BOARD=x230
+```
+
+Make Heads for another board (`XXX` should be the name of your board in ./boards):
+
+```
+make BOARD=XXX
+```
+
+The resulting rom file will be either `./build/XXX/XXX.rom` or `./build/XXX/coreboot.rom` (`XXX` should be the name of your board in `./boards`).
+
+
 
 On a Fedora machine, [install host build requirements packages as specified here](https://github.com/osresearch/heads/blob/master/.gitlab-ci.yml#L19).
 
@@ -27,13 +87,12 @@ emulated Heads+coreboot ROM image.  This takes a long while, so go out
 for a cup of coffee..  The initial build on a small 1-core 1GB droplet
 it will take over 90 minutes, an 8-core system takes about 40 minutes.
 
-Useful targets, stored under the `board` directory of the git tree. 
+Useful targets, stored under the `board` directory of the git tree.
 
 Generated roms are generally found under build/$BOARD/$BOARD.rom
 
----
-Generic
----
+
+### Generic
 Generally, everything that is needed to flash the SPI flash of a board is a single rom generated through `make BOARD=$BOARD` command, where $BOARD is the name of the board that can be found under `board` directory of the git downloaded tree.
 
 
@@ -42,21 +101,16 @@ make BOARD=kgpe-d16
 ```
 will produce a build/kgpe-d16/kgpe-d6.rom
 
----
-Make for a specific configuration. 
----
+
+### Make for a specific configuration.
 Some boards have a two SPI flash chip configuration and need special care.
 
-----
-x230 and x220
-----
+#### x230
 
------
-Initial SPI2 (4MB) flash chips
------
-x230 and x220 boards needs their 4MB SPI2 to be initially externally flashed, while the 12MB rom needs to be flashed internally from within Heads to make sure to not screw up with ME, contained in the SPI1 flash (8MB bottom flash chip under keyboad)
+#### Initial SPI2 (4MB) flash chips
+x230 boards needs their 4MB SPI2 to be initially externally flashed, while the 12MB rom needs to be flashed internally from within Heads to make sure to not screw up with ME, contained in the SPI1 flash (8MB bottom flash chip under keyboad)
 
-The following make command generates a self-contained, externally flashable rom for the SPI2 (4MB BIOS, top SPI flash under keyboard). 
+The following make command generates a self-contained, externally flashable rom for the SPI2 (4MB BIOS, top SPI flash under keyboard).
 
 
 ```
@@ -64,51 +118,11 @@ make BOARD=x230-flash
 ```
 Resulting rom is found under build/x230-flash/x230-flash.rom
 
------
-Subsequent flashing (upgrades)
------
 
-The following make command will generate a 12MB `coreboot.rom` under the build/x230 directory.
-
-```
-make BOARD=x230
-```
-
-The `coreboot.rom` is the one needed to flash rom updates from within Heads in respect of ME. This is done with the help of the `flashrom-x230.sh` script from Heads recovery shell.
-
-More information under [`Installing Heads`](https://github.com/osresearch/heads-wiki/blob/master/Installing-Heads.md) and [`Cleaning the ME firmware`](https://github.com/osresearch/heads-wiki/blob/master/Clean-the-ME-firmware.md)
-
----
-Helpful targets and options
----
-
-Verbose build (otherwise all log output goes into `build/logs/$(submodule).log`):
-```
-make V=1
-```
-
-Produce just the build of a single sub-module with the `.intermediate` suffix:
-```
-make gpg.intermediate
-```
-
-Clean a single submodule or all (?) volatile submodules:
-```
-make gpg.clean
-make modules.clean
-```
-
-Clean all volatile submodules except crosscompiler (clean build):
-```
-make real.clean
-```
-
-The Heads `Makefile`
-===
+### The Heads `Makefile`
 All of the organization of the Heads build is handled in the top level `Makefile` with the goal of producing a reproducible `initrd.cpio` containing the Heads runtime and kernel modules, the Head's Linux `bzImage` kernel, and the `coreboot.rom` tailored for the target platform initialization.
 
-Build configuration
----
+### Build configuration
 Platform configuration are stored in the `board/$BOARD.config`
 (this might change); these files specify the mainboard (`x230`, `x230-flash`
 `chell`, `librem13v1`, and servers like `s2600wf`, `winterfell`, `kgpe-d16` and `r630`)
@@ -119,8 +133,7 @@ coreboot or edk2 configuration.
 An example configuration is [`board/x230.config`](https://github.com/osresearch/heads/blob/master/boards/x230.config)
 
 
-Sub-modules
----
+### Sub-modules
 Sub-modules are defined in the `modules` directory and each one defines a dependency to be fetched, verified, configured, built and installed.  The top level `Makefile` includes all of the `modules/*` files and the ones that are configured to `y` in the board's configuration will be built and installed into the initrd.  Since the Heads runtime is built with a `musl-libc` cross compiler, there are frequently hacks necessary to convince the `configure` scripts or submodule Makefiles to build correctly, and since we only want the bare minimum of output for the initrd we don't use the actual `make install` target to create the ramdisk.
 
 An example submodule file is for the `cryptsetup` command, used to mount encrypted volumes from the recovery shell:

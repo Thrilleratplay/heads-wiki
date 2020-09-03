@@ -1,0 +1,33 @@
+.section.heading {
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+.menubar {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+body:not(.no-literate) .content > pre {
+  background: #262626;
+  clear:left;
+  float:left;
+  overflow: auto;
+}
+
+body:not(.no-literate) .content > p > img,
+body:not(.no-literate) .content > pre {
+  max-width: 1100px;
+}
+
+body:not(.no-literate) .content > p {
+  max-width: 1140px;
+  width: 1140px;
+}
+
+body:not(.no-literate) .content-root {
+  background-color: #333;
+  -webkit-box-shadow: inset 1380px 0 #eaf2f6, inset 1381px 0 #dfe2e7, inset 1390px 0 5px -10px rgba(0,0,0,0.1);
+  box-shadow: inset 1380px 0 #eaf2f6, inset 1381px 0 #dfe2e7, inset 1390px 0 5px -10px rgba(0,0,0,0.1);
+}

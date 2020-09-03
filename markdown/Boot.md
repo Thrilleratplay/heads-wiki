@@ -1,6 +1,4 @@
-
-Boot config files
-===
+# Boot config files
 
 A user has the option to make persistent modifications to the non-Qubes boot process by creating one or more of the following files:
 

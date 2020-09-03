@@ -1,7 +1,3 @@
-Documentation for the Heads firmware project
-===
+DO NOT USE.
 
-This documentation is hosted at http://osresearch.net/
-
-Sources for heads are at https://github.com/osresearch/heads/
-
+This is a demo and not intended to be used as a guide of any sort.

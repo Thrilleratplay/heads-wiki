@@ -1,7 +1,41 @@
-![Flashing Heads on an x230 at HOPE](images/Flashing_Heads_on_an_x230_at_HOPE.jpg)
+![Flashing Heads on an x230 at HOPE](markdown/images/Flashing_Heads_on_an_x230_at_HOPE.jpg)
 
-Upgrading Heads
-===
+#### Subsequent flashing (upgrades)
+
+The following make command will generate a 12MB `coreboot.rom` under the build/x230 directory.
+
+```
+make BOARD=x230
+```
+
+The `coreboot.rom` is the one needed to flash rom updates from within Heads in respect of ME. This is done with the help of the `flashrom-x230.sh` script from Heads recovery shell.
+
+More information under [`Installing Heads`](https://github.com/osresearch/heads-wiki/blob/master/Installing-Heads.md) and [`Cleaning the ME firmware`](https://github.com/osresearch/heads-wiki/blob/master/Clean-the-ME-firmware.md)
+
+### Helpful targets and options
+
+Verbose build (otherwise all log output goes into `build/logs/$(submodule).log`):
+```
+make V=1
+```
+
+Produce just the build of a single sub-module with the `.intermediate` suffix:
+```
+make gpg.intermediate
+```
+
+Clean a single submodule or all (?) volatile submodules:
+```
+make gpg.clean
+make modules.clean
+```
+
+Clean all volatile submodules except crosscompiler (clean build):
+```
+make real.clean
+```
+
+# Upgrading Heads
 The first time you install Heads, you'll need a
 [hardware flash programmer](https://trmm.net/SPI_Flash) to be able to
 replace the existing vendor firmware.  Subsequent upgrades can be
@@ -17,7 +51,7 @@ the disk key is not accessible to the recovery shell.
 
 Recovery shell
 ---
-![Recovery shell](images/Recovery_shell.jpg)
+![Recovery shell](markdown/images/Recovery_shell.jpg)
 
 If the flash protection bits are set correctly it is not possible to
 rewrite the firmware from the normal OS.  You'll need to reboot
@@ -25,7 +59,7 @@ to the Heads recovery shell (hit `r` after the TPM TOTP prompt).
 
 Mounting the USB media
 ---
-![insmod](images/insmod.jpg)
+![insmod](markdown/images/insmod.jpg)
 
 The Heads boot process does not have USB or network drivers by default
 and neither does the recovery shell (although this might change).
@@ -49,7 +83,7 @@ mount -o ro /dev/sdb1 /media
 
 Flashing the ROM
 ---
-![Mount and flash](images/Mount_and_flash.jpg)
+![Mount and flash](markdown/images/Mount_and_flash.jpg)
 
 There is a helper script `/bin/flashrom-x230.sh` that uses the x230
 flash ROM layout and the Heads modified version of `flashrom` to
@@ -61,7 +95,7 @@ reading the ME section, so it is not necessary to have used the
 flashrom-x230.sh /media/x230.full.rom
 ```
 
-![Flashrom](images/Flashrom.jpg)
+![Flashrom](markdown/images/Flashrom.jpg)
 
 If all goes well it will write for about a minute and then report
 success.  Due to hacks in `flashrom`, it does not read back what it
@@ -77,7 +111,7 @@ the TPM values are at their persistent state
 
 Regenerating the TOTP token
 ---
-![TPM TOTP QR](images/TPM_TOTP_QR.jpg)
+![TPM TOTP QR](markdown/images/TPM_TOTP_QR.jpg)
 
 After the second post-flash reboot, generate a new token and store the
 QR code in your phone by running:
@@ -95,3 +129,53 @@ Resealing the disk encryption keys
 When you get to the standard boot menu and after you verify the TOTP, select 'm' to
 go to the full boot menu.  Select the option you want (usually the first),
 make it the default by hitting 'd' and also say 'y' when asked to reseal the disk keys.
+
+
+## Internal Flashing:
+
+Reconnect power to the laptop and you should be able to boot into the Heads recovery shell.
+
+Plug your USB flash drive into the laptop that you used to build Heads. If your USB drive is already formatted as ext4 or you are confident you can format it then just move the coreboot.rom file to the usb drive. Otherwise, find your usb drive using fdisk:
+
+```
+sudo fdisk -l
+```
+
+Format your usb drive as ext4 (My usb drive is /dev/sdb):
+
+```
+sudo mkfs.ext4 /dev/sdb1
+```
+
+These are the commands I used to create a directory ~/usb/ and mount my usb drive there, but you can mount it wherever you want:
+
+```
+mkdir ~/usb
+sudo mount /dev/sdb1 ~/usb/
+```
+
+Move the full Heads rom file to the usb drive:
+
+```
+sudo cp ~/heads/build/x230/coreboot.rom ~/usb/
+```
+
+Insert the usb drive into the Thinkpad x230 and mount it:
+
+```
+mount-usb
+```
+
+You should now see the file coreboot.rom in /media:
+
+```
+ls /media/
+```
+
+Internally flash coreboot.rom (This command will write to both SPI flash chips as if they are one 12Mb chip):
+
+```
+flash.sh -c /media/coreboot.rom
+```
+
+Wait for the flashing to finish and you should be able to reboot into Heads!

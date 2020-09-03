@@ -1,3 +1,6 @@
+# Development
+
+## Porting
 To add a new board to the Heads build hopefully you only need to modify
 the coreboot configuration and add a top-level image configuration.
 
@@ -28,3 +31,24 @@ using the new coreboot config file.  This will create the output directory
 in the top level directory.
 
 * If things don't work, please open an issue on https://github.com/osresearch/heads/issues
+
+
+
+## Emulating
+Generate the `qemu.rom` image:
+
+```
+make BOARD=qemu-coreboot
+```
+
+Boot it in qemu:
+
+```
+build/make-4.2/make BOARD=qemu-coreboot run
+```
+
+Issues with emulation:
+* TPM is not available
+* Xen won't start dom0 correctly, but it is sufficient to test that the `initrd.cpio` file was correctly generated
+* This also lets us test Xen patches for legacy-free systems
+* SATA controller sometimes takes minutes to timeout?
